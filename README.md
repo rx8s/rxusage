@@ -1,6 +1,14 @@
 # rxusage
 
-แดชบอร์ดติดตามการใช้งาน (Usage dashboard) — Next.js (static export) + Firebase, deploy บน Cloudflare Pages
+แดชบอร์ดดู limit ของ Claude และ ChatGPT — Next.js (static export) + Firebase, deploy บน Cloudflare Pages
+
+## ฟีเจอร์
+
+- **โควต้าแพ็กเกจ (claude.ai / ChatGPT):** ทั้งสองแอปไม่มี API ให้อ่านโควต้า จึงกรอกเอง (ใช้ไปกี่ % และรีเซ็ตเมื่อไหร่) เก็บใน Firestore `users/{uid}/quotas` แล้วหน้าเว็บนับถอยหลังเวลารีเซ็ตให้
+- **การใช้ API เดือนนี้ (Anthropic / OpenAI):** Cloudflare Pages Function `functions/api/usage.ts` ใช้ Admin API key ฝั่ง server ดึงค่าใช้จ่ายและ token ตั้งแต่ต้นเดือน (UTC) แล้วเทียบกับงบที่ตั้งไว้ใน Firestore `users/{uid}/settings/budgets`
+  - Anthropic: Usage and Cost Analytics API (`/v1/organizations/analytics/usage` และ `/cost`) — ข้อมูลช้าได้ถึง 4–24 ชั่วโมง
+  - OpenAI: `/v1/organization/costs` และ `/v1/organization/usage/completions`
+  - Function ยอมรับเฉพาะ Firebase ID token ของอีเมลใน `ALLOWED_EMAIL`
 
 - **Stack:** Next.js 16 (App Router, `output: "export"`), React 19, Tailwind CSS 4, TypeScript
 - **Firebase (client SDK):** Authentication, Cloud Firestore, Realtime Database, Cloud Storage, Analytics — ดู `src/lib/firebase.ts`
@@ -15,6 +23,13 @@ cp .env.example .env.local   # ใส่ค่าจาก Firebase console
 npm run dev                  # http://localhost:3000
 ```
 
+`npm run dev` ไม่มี Pages Function ส่วน "การใช้ API" จะขึ้นว่าใช้ไม่ได้ ถ้าจะทดสอบส่วนนี้:
+
+```bash
+cp .dev.vars.example .dev.vars   # ใส่ ALLOWED_EMAIL และ Admin keys
+npm run preview                  # build แล้วรันด้วย wrangler ที่ http://localhost:8788
+```
+
 ค่า Firebase หาได้ที่ Firebase console → Project settings → General → Your apps → Web app
 ค่า `NEXT_PUBLIC_*` เป็น config สาธารณะ (ไม่ใช่ secret) — ข้อมูลต้องป้องกันด้วย **Firebase Security Rules** เสมอ เพราะหน้าเว็บเป็น static และการเช็คล็อกอินทำฝั่ง browser เท่านั้น
 
@@ -26,8 +41,11 @@ npm run dev                  # http://localhost:3000
    - Framework preset: **Next.js (Static HTML Export)**
    - Build command: `npm run build`
    - Build output directory: `out`
-4. Settings → Environment variables: ใส่ทุกตัวจาก `.env.example` (ทั้ง Production และ Preview) และ `NODE_VERSION` = `22`
+4. Settings → Variables and Secrets:
+   - ทุกตัวจาก `.env.example` (ทั้ง Production และ Preview) และ `NODE_VERSION` = `22`
+   - ทุกตัวจาก `.dev.vars.example` — ตั้ง `ANTHROPIC_ADMIN_KEY` และ `OPENAI_ADMIN_KEY` เป็นแบบ **Secret (encrypted)**
 5. Firebase console → Authentication → Settings → **Authorized domains**: เพิ่มโดเมน `*.pages.dev` ของโปรเจกต์ (และ custom domain ถ้ามี) เพื่อให้ Google Sign-In ใช้งานได้
+6. Firestore → Rules: วางเนื้อหาจาก `firestore.rules` แล้ว Publish (ให้แต่ละคนอ่าน/เขียนได้เฉพาะข้อมูลตัวเอง)
 
 ทุกครั้งที่ push ไป branch หลัก Cloudflare จะ build และ deploy ใหม่อัตโนมัติ
 
@@ -37,4 +55,5 @@ npm run dev                  # http://localhost:3000
 |---|---|
 | `npm run dev` | รัน dev server |
 | `npm run build` | build static site ไปที่ `out/` |
+| `npm run preview` | build แล้วรันพร้อม Pages Function ด้วย wrangler |
 | `npm run lint` | ตรวจโค้ดด้วย ESLint |

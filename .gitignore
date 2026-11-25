@@ -57,3 +57,7 @@ venv/
 next-env.d.ts
 *.tsbuildinfo
 .vercel
+
+# Cloudflare
+.dev.vars
+.wrangler/
