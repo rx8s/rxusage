@@ -51,3 +51,9 @@ venv/
 # Misc
 *.tmp
 .cache/
+
+# Next.js
+/out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
