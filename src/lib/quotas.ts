@@ -11,7 +11,7 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
-import { firestore } from "./firebase";
+import { FIREBASE_PREFIX, firestore } from "./firebase";
 
 export type Provider = "claude" | "chatgpt";
 export const providers: Provider[] = ["claude", "chatgpt"];
@@ -31,8 +31,11 @@ export type QuotaInput = Omit<Quota, "id" | "updatedAt">;
 /** Monthly API budgets in USD. */
 export type Budgets = { anthropic: number | null; openai: number | null };
 
-const quotasCol = (uid: string) => collection(firestore(), "users", uid, "quotas");
-const budgetsDoc = (uid: string) => doc(firestore(), "users", uid, "settings", "budgets");
+// Firestore layout (shared Firebase project, so everything lives under the "rxusage" root collection):
+//   rxusage/{uid}/quotas/{quotaId}
+//   rxusage/{uid}/settings/budgets
+const quotasCol = (uid: string) => collection(firestore(), FIREBASE_PREFIX, uid, "quotas");
+const budgetsDoc = (uid: string) => doc(firestore(), FIREBASE_PREFIX, uid, "settings", "budgets");
 
 const toDate = (v: unknown) => (v instanceof Timestamp ? v.toDate() : null);
 

@@ -3,9 +3,9 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getDatabase, type Database } from "firebase/database";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
-import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import { getDatabase, ref as dbRef, type Database, type DatabaseReference } from "firebase/database";
+import { getStorage, ref as sRef, type FirebaseStorage, type StorageReference } from "firebase/storage";
+import { getAnalytics, isSupported, logEvent, type Analytics } from "firebase/analytics";
 
 // NEXT_PUBLIC_* values are inlined at build time, so each must be referenced literally.
 const firebaseConfig = {
@@ -42,10 +42,26 @@ function app(): FirebaseApp {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 
+/**
+ * This Firebase project is shared with other apps, so all rxusage data lives under this prefix:
+ * Firestore root collection `rxusage/...`, Realtime Database `rxusage/...`, Storage `rxusage/...`.
+ * Always build paths through the helpers below.
+ */
+export const FIREBASE_PREFIX = "rxusage";
+
+const prefixed = (path: string) => `${FIREBASE_PREFIX}/${path.replace(/^\/+/, "")}`;
+
 export const firebaseAuth = (): Auth => getAuth(app());
+/** Firestore: put rxusage data under collection(firestore(), FIREBASE_PREFIX, ...). */
 export const firestore = (): Firestore => getFirestore(app());
-export const realtimeDb = (): Database => getDatabase(app());
-export const storage = (): FirebaseStorage => getStorage(app());
+
+const realtimeDb = (): Database => getDatabase(app());
+/** Realtime Database reference at `rxusage/<path>`. */
+export const rtdbRef = (path: string): DatabaseReference => dbRef(realtimeDb(), prefixed(path));
+
+const storage = (): FirebaseStorage => getStorage(app());
+/** Cloud Storage reference at `rxusage/<path>`. */
+export const storageRef = (path: string): StorageReference => sRef(storage(), prefixed(path));
 
 let analyticsPromise: Promise<Analytics | null> | undefined;
 /** Analytics only runs in supported browsers; resolves to null elsewhere. */
@@ -53,4 +69,10 @@ export function analytics(): Promise<Analytics | null> {
   if (!serviceConfig.analytics || typeof window === "undefined") return Promise.resolve(null);
   analyticsPromise ??= isSupported().then((ok) => (ok ? getAnalytics(app()) : null));
   return analyticsPromise;
+}
+
+/** Logs an Analytics event named `rxusage_<name>` (the GA property is shared with other apps). */
+export async function logAppEvent(name: string, params?: Record<string, unknown>) {
+  const a = await analytics();
+  if (a) logEvent(a, `${FIREBASE_PREFIX}_${name}`, { app: FIREBASE_PREFIX, ...params });
 }

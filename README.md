@@ -4,14 +4,28 @@
 
 ## ฟีเจอร์
 
-- **โควต้าแพ็กเกจ (claude.ai / ChatGPT):** ทั้งสองแอปไม่มี API ให้อ่านโควต้า จึงกรอกเอง (ใช้ไปกี่ % และรีเซ็ตเมื่อไหร่) เก็บใน Firestore `users/{uid}/quotas` แล้วหน้าเว็บนับถอยหลังเวลารีเซ็ตให้
-- **การใช้ API เดือนนี้ (Anthropic / OpenAI):** Cloudflare Pages Function `functions/api/usage.ts` ใช้ Admin API key ฝั่ง server ดึงค่าใช้จ่ายและ token ตั้งแต่ต้นเดือน (UTC) แล้วเทียบกับงบที่ตั้งไว้ใน Firestore `users/{uid}/settings/budgets`
+- **โควต้าแพ็กเกจ (claude.ai / ChatGPT):** ทั้งสองแอปไม่มี API ให้อ่านโควต้า จึงกรอกเอง (ใช้ไปกี่ % และรีเซ็ตเมื่อไหร่) เก็บใน Firestore `rxusage/{uid}/quotas` แล้วหน้าเว็บนับถอยหลังเวลารีเซ็ตให้
+- **การใช้ API เดือนนี้ (Anthropic / OpenAI):** Cloudflare Pages Function `functions/api/usage.ts` ใช้ Admin API key ฝั่ง server ดึงค่าใช้จ่ายและ token ตั้งแต่ต้นเดือน (UTC) แล้วเทียบกับงบที่ตั้งไว้ใน Firestore `rxusage/{uid}/settings/budgets`
   - Anthropic: Usage and Cost Analytics API (`/v1/organizations/analytics/usage` และ `/cost`) — ข้อมูลช้าได้ถึง 4–24 ชั่วโมง
   - OpenAI: `/v1/organization/costs` และ `/v1/organization/usage/completions`
   - Function ยอมรับเฉพาะ Firebase ID token ของอีเมลใน `ALLOWED_EMAIL`
 
 - **Stack:** Next.js 16 (App Router, `output: "export"`), React 19, Tailwind CSS 4, TypeScript
 - **Firebase (client SDK):** Authentication, Cloud Firestore, Realtime Database, Cloud Storage, Analytics — ดู `src/lib/firebase.ts`
+
+## Firebase ใช้ร่วมกับโปรเจกต์อื่น
+
+Firebase project นี้ใช้ร่วมกับแอปอื่น ข้อมูลทุกอย่างของ rxusage จึงอยู่ใต้ prefix `rxusage` (`FIREBASE_PREFIX` ใน `src/lib/firebase.ts`):
+
+| บริการ | ที่อยู่ | วิธีใช้ในโค้ด |
+|---|---|---|
+| Firestore | collection `rxusage/{uid}/...` | `collection(firestore(), FIREBASE_PREFIX, uid, ...)` |
+| Realtime Database | `rxusage/...` | `rtdbRef("path")` |
+| Storage | `rxusage/...` | `storageRef("path")` |
+| Analytics | event `rxusage_<name>` | `logAppEvent("name")` |
+
+Rules ในโฟลเดอร์ `firebase/` เป็น **ส่วนที่ต้องนำไปรวม** กับ rules เดิมของโปรเจกต์ — ห้ามวางทับทั้งไฟล์ เพราะจะลบ rules ของแอปอื่น
+Authentication ใช้ผู้ใช้ชุดเดียวกับแอปอื่น (prefix ไม่ได้) แต่ละคนเห็นเฉพาะข้อมูล `rxusage/{uid}` ของตัวเอง และส่วน API usage อ่านได้เฉพาะ `ALLOWED_EMAIL`
 - **ภาษา:** ไทย / English (สลับได้ที่มุมขวาบน, จำค่าไว้ใน browser) — ข้อความอยู่ที่ `src/i18n/dictionaries.ts`
 - **Design system:** `design-system/rxusage/MASTER.md` (สร้างด้วย ui-ux-pro-max)
 
@@ -45,7 +59,7 @@ npm run preview                  # build แล้วรันด้วย wrang
    - ทุกตัวจาก `.env.example` (ทั้ง Production และ Preview) และ `NODE_VERSION` = `22`
    - ทุกตัวจาก `.dev.vars.example` — ตั้ง `ANTHROPIC_ADMIN_KEY` และ `OPENAI_ADMIN_KEY` เป็นแบบ **Secret (encrypted)**
 5. Firebase console → Authentication → Settings → **Authorized domains**: เพิ่มโดเมน `*.pages.dev` ของโปรเจกต์ (และ custom domain ถ้ามี) เพื่อให้ Google Sign-In ใช้งานได้
-6. Firestore → Rules: วางเนื้อหาจาก `firestore.rules` แล้ว Publish (ให้แต่ละคนอ่าน/เขียนได้เฉพาะข้อมูลตัวเอง)
+6. Firebase rules: คัดลอกเฉพาะบล็อก `rxusage` จาก `firebase/firestore.rules` (และ `firebase/database.rules.json`, `firebase/storage.rules` ถ้าจะใช้) ไปรวมกับ rules เดิมใน console แล้ว Publish — **ห้ามวางทับทั้งไฟล์**
 
 ทุกครั้งที่ push ไป branch หลัก Cloudflare จะ build และ deploy ใหม่อัตโนมัติ
 

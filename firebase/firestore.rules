@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// ⚠️ This Firebase project is shared with other apps.
+// Do NOT replace the existing rules with this file. In Firebase console → Firestore Database → Rules,
+// copy only the "rxusage" match block below into the existing
+// `match /databases/{database}/documents { ... }` section, then Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- rxusage: each user reads/writes only rxusage/{uid}/** ----
+    match /rxusage/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // ---- end rxusage ----
+
+  }
+}

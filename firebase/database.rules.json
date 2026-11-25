@@ -1,0 +1,11 @@
+{
+  "//": "Shared project: merge only the \"rxusage\" key into the existing Realtime Database rules (Firebase console -> Realtime Database -> Rules). Do not replace the other keys.",
+  "rules": {
+    "rxusage": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
