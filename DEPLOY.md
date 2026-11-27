@@ -40,7 +40,7 @@ cd rxusage && npm install
 3. **Firestore Database** → Create database → Production mode → เลือก location ใกล้คุณ (เช่น `asia-southeast1`)
 4. **Firestore Database → Rules:** วางเนื้อหาทั้งไฟล์ [`firebase/firestore.rules`](firebase/firestore.rules) แล้ว **Publish**
    - ถ้าใช้ Firebase project เดียวกับแอปอื่น ให้คัดลอกเฉพาะบล็อก `rxusage` ไปรวมกับ rules เดิม **ห้ามวางทับ**
-   - ถ้าอยากล็อกให้เฉพาะอีเมลของคุณเขียนข้อมูลได้ ใช้บรรทัด optional ในไฟล์ (แก้อีเมลก่อน)
+   - ถ้าอยากล็อกให้เฉพาะอีเมลของคุณเขียนข้อมูลได้ ใช้บรรทัด optional ในไฟล์ (แก้อีเมลก่อน) รายการอีเมลตรงนี้ต้องตรงกับ `ALLOWED_EMAIL` ในขั้นที่ 4 ดู[เพิ่มหรือเปลี่ยนบัญชีที่เข้าได้](#เพิ่มหรือเปลี่ยนบัญชีที่เข้าได้)
 5. **Project settings** (รูปเฟือง) → General → Your apps → ไอคอน **Web `</>`** → ตั้งชื่อ → Register
    - คัดลอกค่าใน `firebaseConfig` ไว้ใช้ในขั้นที่ 3 และ 4
 6. **Authentication → Settings → Authorized domains:** มี `localhost` อยู่แล้ว ส่วนโดเมน `*.pages.dev` จะเพิ่มในขั้นที่ 5
@@ -99,7 +99,7 @@ npm run preview
 | `NODE_VERSION` | `22` | Text |
 | `NEXT_PUBLIC_FIREBASE_*` ทั้ง 8 ตัว | ค่าเดียวกับ `.env.local` | Text |
 | `FIREBASE_PROJECT_ID` | ค่าเดียวกับ `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Text |
-| `ALLOWED_EMAIL` | Gmail ที่ให้เข้าเว็บได้ คั่นหลายบัญชีด้วย `,` | Text |
+| `ALLOWED_EMAIL` | Gmail ที่ให้เข้าเว็บได้ คั่นหลายบัญชีด้วย `,` (ถ้าล็อกอีเมลใน Firestore rules ต้องใส่ให้ตรงกัน) | Text |
 | `ANTHROPIC_ADMIN_KEY` | (ไม่บังคับ) Admin key ของ Anthropic API | **Secret** |
 | `OPENAI_ADMIN_KEY` | (ไม่บังคับ) Admin key ของ OpenAI API | **Secret** |
 
@@ -152,6 +152,24 @@ launchctl kickstart -k gui/$(id -u)/com.rxusage.collector
 - บัญชี Google ที่ไม่อยู่ใน `ALLOWED_EMAIL` จะเห็นหน้า "บัญชีนี้ไม่ได้รับอนุญาต"
 - ทุกครั้งที่ push ไป branch หลัก Cloudflare จะ build และ deploy ใหม่เอง
 
+## เพิ่มหรือเปลี่ยนบัญชีที่เข้าได้
+
+รายชื่ออีเมลอยู่ 2 ที่ ต้องแก้ให้ตรงกันทั้งคู่:
+
+1. **Cloudflare Pages → Settings → Variables and Secrets → `ALLOWED_EMAIL`:** คั่นหลายบัญชีด้วย `,` เช่น `you@gmail.com,partner@gmail.com` แล้วไปที่ **Deployments → ⋯ → Retry deployment** เพราะค่าจะมีผลกับ deploy ใหม่เท่านั้น
+2. **Firebase console → Firestore Database → Rules:** ถ้าใช้บรรทัด optional ที่ล็อกอีเมล ให้เพิ่มอีเมลเดียวกันในรายการ แล้ว **Publish**
+
+```
+&& request.auth.token.email in ['you@gmail.com', 'partner@gmail.com'];
+```
+
+| แก้แค่ที่เดียว | อาการ |
+|---|---|
+| เพิ่มใน `ALLOWED_EMAIL` แต่ไม่เพิ่มใน rules | เข้าเว็บได้ แต่ส่วน "โควต้าที่กรอกเอง" โหลดหรือบันทึกไม่ได้ |
+| เพิ่มใน rules แต่ไม่เพิ่มใน `ALLOWED_EMAIL` | ล็อกอินแล้วเจอหน้า "บัญชีนี้ไม่ได้รับอนุญาต" |
+
+ถ้า Firebase project ใช้ร่วมกับแอปอื่น ให้แก้เฉพาะบล็อก `rxusage` ใน Rules **ห้ามวางไฟล์ทับทั้งหมด** เพราะ rules ของแอปอื่นจะหายและแอปเหล่านั้นจะอ่านหรือเขียนข้อมูลไม่ได้ ถ้าพลาดไปแล้ว Rules มีประวัติทุกเวอร์ชันให้ดูแล้วนำกลับมาได้
+
 ## แก้ปัญหา
 
 | อาการ | สาเหตุ / วิธีแก้ |
@@ -159,6 +177,7 @@ launchctl kickstart -k gui/$(id -u)/com.rxusage.collector
 | หน้าล็อกอินขึ้น "ยังไม่ได้ตั้งค่า Firebase" | ยังไม่ได้ใส่ `NEXT_PUBLIC_FIREBASE_*` ใน Cloudflare หรือใส่หลัง build ให้ Retry deployment |
 | ล็อกอินแล้วขึ้นว่าโดเมนไม่ได้รับอนุญาต | ทำขั้นที่ 5 |
 | ล็อกอินได้แต่ขึ้น "บัญชีนี้ไม่ได้รับอนุญาต" | อีเมลไม่ตรงกับ `ALLOWED_EMAIL` หรือ `FIREBASE_PROJECT_ID` ผิด แก้แล้ว Retry deployment |
+| เข้าเว็บได้แต่ "โควต้าที่กรอกเอง" ขึ้น "โหลดข้อมูลไม่สำเร็จ" | ยังไม่ได้ Publish Firestore rules หรืออีเมลไม่อยู่ในรายการของบรรทัดที่ล็อกอีเมล ดู[เพิ่มหรือเปลี่ยนบัญชีที่เข้าได้](#เพิ่มหรือเปลี่ยนบัญชีที่เข้าได้) |
 | การ์ดลิมิตขึ้น "ยังไม่ได้ผูก KV" | ทำขั้นที่ 4 ข้อ 5 แล้ว Retry deployment |
 | Log ของ collector ขึ้น `sent 401` | `LIMITS_INGEST_TOKEN_SHA256` ไม่ตรงหรือยังไม่ได้ deploy ใหม่ รัน `collector/install.sh` อีกครั้งเพื่อดู hash |
 | Log ขึ้น `sent 405` | เว็บยังเป็น build เก่าที่ไม่มี `/api/limits` |

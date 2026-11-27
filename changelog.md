@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- DEPLOY.md section on adding or changing allowed accounts: keep `ALLOWED_EMAIL` and the Firestore rules email list in sync, what breaks when only one is changed, and never overwrite a shared project's rules.
 - `DEPLOY.md`: step-by-step guide for deploying your own copy (Firebase, Cloudflare Pages, KV, collector, troubleshooting).
 - MIT `LICENSE`.
 - Pages Function `functions/api/me.ts` and a "This account isn't allowed" screen for Google accounts not in `ALLOWED_EMAIL`.
