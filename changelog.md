@@ -33,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- DEPLOY.md "Fork and clone" now says forks of the public repo stay public, adds a private-repo path, the source repo link, and how to pull later updates.
+- DEPLOY.md "Fork and clone" now says forks of the public repo stay public, adds a private-repo path (GitHub Import), the source repo link, and how to pull later updates; both paths clone from your own repo.
 - Sign-in is Google (Gmail) only; the email/password form is removed. `ALLOWED_EMAIL` accepts several comma-separated emails.
 - Prepared the repo to be public: README rewritten, Firebase rules and `.dev.vars.example` no longer assume a specific shared project, and `collector/install.sh` now requires the site URL on first install.
 - Manual limits section renamed to "Manual limits" and moved below API usage; Firebase token checks moved to `functions/_lib/auth.ts`, shared by both functions; `npm run preview` now binds a local `LIMITS` KV.

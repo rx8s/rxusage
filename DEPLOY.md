@@ -35,26 +35,22 @@ git clone https://github.com/<your-user>/rxusage.git
 
 **ข. Repo private ของคุณเอง**
 
-1. สร้าง repo ใหม่ที่ https://github.com/new ชื่อ `rxusage` เลือก **Private** และไม่ต้องติ๊กสร้าง README, .gitignore หรือ license
-2. Clone ต้นฉบับแล้ว push ขึ้น repo ใหม่:
+1. เปิด https://github.com/new/import → ช่อง URL ใส่ `https://github.com/rx8s/rxusage` → ตั้งชื่อ `rxusage` → เลือก **Private** → Begin import
+2. Clone repo ของคุณลงเครื่อง (แทน `<your-user>` ด้วยชื่อผู้ใช้ GitHub ของคุณ):
 
 ```bash
-git clone https://github.com/rx8s/rxusage.git
+git clone https://github.com/<your-user>/rxusage.git
 ```
 
-```bash
-cd rxusage && git remote rename origin upstream && git remote add origin https://github.com/<your-user>/rxusage.git && git push -u origin master
-```
-
-**ติดตั้ง dependencies:** รันในโฟลเดอร์ `rxusage` (ทาง ก. ต้อง `cd rxusage` ก่อน ทาง ข. อยู่ในโฟลเดอร์นั้นแล้ว)
+**ติดตั้ง dependencies** (ทั้งสองทาง):
 
 ```bash
-npm install
+cd rxusage && npm install
 ```
 
 **รับอัปเดตจากต้นฉบับภายหลัง**
 - ทาง ก.: กด **Sync fork** ในหน้า repo ของคุณบน GitHub
-- ทาง ข.: รัน `git pull upstream master` แล้ว `git push`
+- ทาง ข.: เพิ่มต้นฉบับเป็น remote ครั้งเดียวด้วย `git remote add upstream https://github.com/rx8s/rxusage.git` จากนั้นทุกครั้งรัน `git pull upstream master` แล้ว `git push`
 
 ## 2. Firebase
 
