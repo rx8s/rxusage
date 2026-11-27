@@ -10,11 +10,9 @@
  *   ANTHROPIC_ADMIN_KEY   sk-ant-admin... (optional)
  *   OPENAI_ADMIN_KEY      OpenAI admin key (optional)
  */
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { json, verifyUser, type AuthEnv } from "../_lib/auth";
 
-interface Env {
-  FIREBASE_PROJECT_ID?: string;
-  ALLOWED_EMAIL?: string;
+interface Env extends AuthEnv {
   ANTHROPIC_ADMIN_KEY?: string;
   OPENAI_ADMIN_KEY?: string;
 }
@@ -33,34 +31,6 @@ export type ProviderUsage =
       models: ModelRow[];
       dataRefreshedAt: string | null;
     };
-
-const FIREBASE_JWKS = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"),
-);
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", "cache-control": "private, no-store" },
-  });
-
-async function verifyUser(request: Request, env: Env): Promise<boolean> {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token || !env.FIREBASE_PROJECT_ID || !env.ALLOWED_EMAIL) return false;
-  try {
-    const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
-      issuer: `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`,
-      audience: env.FIREBASE_PROJECT_ID,
-    });
-    return (
-      payload.email_verified === true &&
-      typeof payload.email === "string" &&
-      payload.email.toLowerCase() === env.ALLOWED_EMAIL.toLowerCase()
-    );
-  } catch {
-    return false;
-  }
-}
 
 function monthStartUtc(now: Date) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));

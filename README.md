@@ -4,6 +4,11 @@
 
 ## ฟีเจอร์
 
+- **ลิมิตแพ็กเกจอัตโนมัติ (Claude / ChatGPT):** ตัวเก็บข้อมูลบน Mac (`collector/`) อ่าน % ที่ใช้ไปของรอบ 5 ชั่วโมงและรายสัปดาห์ทุก 5 นาที แล้วส่งขึ้น `functions/api/limits.ts` ซึ่งเก็บไว้ใน Cloudflare KV
+  - Claude: ใช้การล็อกอินของ Claude Code ใน Keychain เรียก `api.anthropic.com/api/oauth/usage` (ค่าเดียวกับ `/usage` ใน Claude Code และใช้ร่วมกับ claude.ai)
+  - ChatGPT: ใช้การล็อกอินของ Codex CLI ใน `~/.codex/auth.json` เรียก `chatgpt.com/backend-api/wham/usage` (ค่าเดียวกับ `/status` ใน Codex)
+  - ทั้งสองไม่ใช่ API ทางการ อาจเปลี่ยนได้โดยไม่แจ้ง token อยู่ในเครื่องเท่านั้น ส่งขึ้นเว็บแค่ตัวเลข % และเวลารีเซ็ต
+  - ตัวเก็บข้อมูลไม่ refresh token เอง ถ้าไม่ได้เปิด Claude Code / Codex นานจน token หมดอายุ การ์ดจะขึ้นคำเตือนและแสดงค่าล่าสุดที่มี
 - **โควต้าแพ็กเกจ (claude.ai / ChatGPT):** ทั้งสองแอปไม่มี API ให้อ่านโควต้า จึงกรอกเอง (ใช้ไปกี่ % และรีเซ็ตเมื่อไหร่) เก็บใน Firestore `rxusage/{uid}/quotas` แล้วหน้าเว็บนับถอยหลังเวลารีเซ็ตให้
 - **การใช้ API เดือนนี้ (Anthropic / OpenAI):** Cloudflare Pages Function `functions/api/usage.ts` ใช้ Admin API key ฝั่ง server ดึงค่าใช้จ่ายและ token ตั้งแต่ต้นเดือน (UTC) แล้วเทียบกับงบที่ตั้งไว้ใน Firestore `rxusage/{uid}/settings/budgets`
   - Anthropic: Usage and Cost Analytics API (`/v1/organizations/analytics/usage` และ `/cost`) — ข้อมูลช้าได้ถึง 4–24 ชั่วโมง
@@ -61,7 +66,26 @@ npm run preview                  # build แล้วรันด้วย wrang
 5. Firebase console → Authentication → Settings → **Authorized domains**: เพิ่มโดเมน `*.pages.dev` ของโปรเจกต์ (และ custom domain ถ้ามี) เพื่อให้ Google Sign-In ใช้งานได้
 6. Firebase rules: คัดลอกเฉพาะบล็อก `rxusage` จาก `firebase/firestore.rules` (และ `firebase/database.rules.json`, `firebase/storage.rules` ถ้าจะใช้) ไปรวมกับ rules เดิมใน console แล้ว Publish — **ห้ามวางทับทั้งไฟล์**
 
+7. ลิมิตแพ็กเกจอัตโนมัติ:
+   - Workers & Pages → KV → สร้าง namespace (เช่น `rxusage-limits`)
+   - Pages project → Settings → Bindings → Add → KV namespace: Variable name `LIMITS` → เลือก namespace ข้างบน
+   - บน Mac รัน `collector/install.sh https://<โปรเจกต์>.pages.dev` แล้วนำค่า `LIMITS_INGEST_TOKEN_SHA256` ที่พิมพ์ออกมาไปใส่ใน Variables and Secrets
+   - Redeploy เพื่อให้ binding และตัวแปรมีผล
+
 ทุกครั้งที่ push ไป branch หลัก Cloudflare จะ build และ deploy ใหม่อัตโนมัติ
+
+## ตัวเก็บข้อมูลบน Mac (`collector/`)
+
+```bash
+collector/install.sh https://rxusage.pages.dev   # ติดตั้ง LaunchAgent รันทุก 5 นาที
+node collector/rxusage-collector.mjs --dry-run   # ดูค่าที่อ่านได้โดยไม่ส่ง
+collector/install.sh --uninstall                 # ถอนการติดตั้ง
+```
+
+- ตั้งค่าอยู่ที่ `~/.config/rxusage/collector.json` (url + token, สิทธิ์ 600) ฝั่ง server เก็บแค่ SHA-256 ของ token
+- Log: `~/Library/Logs/rxusage-collector.log`
+- ครั้งแรกที่ LaunchAgent อ่าน Keychain macOS อาจถามสิทธิ์ ให้กด **Always Allow**
+- แก้ `collector/rxusage-collector.mjs` แล้วต้องรัน `install.sh` ใหม่ เพราะ LaunchAgent ใช้สำเนาใน `~/Library/Application Support/rxusage`
 
 ## คำสั่ง
 

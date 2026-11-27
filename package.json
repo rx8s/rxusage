@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preview": "next build && wrangler pages dev out --port 8788"
+    "preview": "next build && wrangler pages dev out --port 8788 --kv LIMITS"
   },
   "dependencies": {
     "firebase": "^13.4.0",

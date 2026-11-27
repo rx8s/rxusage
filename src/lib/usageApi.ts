@@ -29,11 +29,12 @@ export class UsageApiError extends Error {
   }
 }
 
-export async function fetchUsage(user: User): Promise<UsageResponse> {
+/** GET a Pages Function with the user's Firebase ID token. */
+export async function fetchApi<T>(user: User, path: string): Promise<T> {
   const token = await user.getIdToken();
   let res: Response;
   try {
-    res = await fetch("/api/usage", { headers: { authorization: `Bearer ${token}` } });
+    res = await fetch(path, { headers: { authorization: `Bearer ${token}` } });
   } catch {
     throw new UsageApiError("failed");
   }
@@ -45,3 +46,5 @@ export async function fetchUsage(user: User): Promise<UsageResponse> {
   if (!res.ok) throw new UsageApiError("failed");
   return res.json();
 }
+
+export const fetchUsage = (user: User) => fetchApi<UsageResponse>(user, "/api/usage");

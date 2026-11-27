@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Automatic plan limits for Claude and ChatGPT at the top of the dashboard: 5-hour and weekly used %, reset countdowns, last-update time, and warnings for stale data or a failed collection; refreshes every minute.
+- Mac collector `collector/rxusage-collector.mjs` that reads limits from the Claude Code sign-in (Keychain) and the Codex sign-in (`~/.codex/auth.json`) and sends only the numbers to the site, plus `collector/install.sh` to run it every 5 minutes as a LaunchAgent.
+- Cloudflare Pages Function `functions/api/limits.ts`: POST from the collector (token checked against `LIMITS_INGEST_TOKEN_SHA256`), GET for the dashboard (Firebase ID token for `ALLOWED_EMAIL`), stored in the `LIMITS` KV namespace.
+
 - Plan limits section for claude.ai and ChatGPT: add, edit and delete limits by hand (used % and reset time), stored in Firestore `rxusage/{uid}/quotas`, with a reset countdown and colour-coded progress bars.
 - API usage section: month-to-date cost, tokens, requests and top models for Anthropic and OpenAI, with a monthly budget per provider stored in Firestore `rxusage/{uid}/settings/budgets`.
 - Cloudflare Pages Function `functions/api/usage.ts` that verifies the Firebase ID token against `ALLOWED_EMAIL` and reads the Anthropic Usage and Cost Analytics API and the OpenAI organization Costs and Completions usage APIs with server-side admin keys.
@@ -25,5 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Manual limits section renamed to "Manual limits" and moved below API usage; Firebase token checks moved to `functions/_lib/auth.ts`, shared by both functions; `npm run preview` now binds a local `LIMITS` KV.
 - All Firebase data now lives under the `rxusage` prefix because the Firebase project is shared: Firestore `rxusage/{uid}/...`, Realtime Database and Storage `rxusage/...` via `rtdbRef()` / `storageRef()`, Analytics events `rxusage_<name>` via `logAppEvent()`.
 - Dashboard overview now shows plan limits and API usage instead of the Firebase service status panel.

@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useI18n } from "@/i18n/I18nProvider";
 import { ApiUsageSection } from "./_components/ApiUsageSection";
+import { LiveLimitsSection } from "./_components/LiveLimitsSection";
 import { QuotaSection } from "./_components/QuotaSection";
 
 export default function DashboardPage() {
@@ -19,8 +20,9 @@ export default function DashboardPage() {
           {user.displayName || user.email ? `, ${user.displayName || user.email}` : ""} · {t.dashboard.subtitle}
         </p>
       </header>
-      <QuotaSection uid={user.uid} />
+      <LiveLimitsSection user={user} />
       <ApiUsageSection user={user} />
+      <QuotaSection uid={user.uid} />
     </div>
   );
 }
