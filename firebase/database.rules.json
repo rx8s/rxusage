@@ -1,5 +1,5 @@
 {
-  "//": "Shared project: merge only the \"rxusage\" key into the existing Realtime Database rules (Firebase console -> Realtime Database -> Rules). Do not replace the other keys.",
+  "//": "Optional (rxusage does not use Realtime Database today). New project: paste as is. Shared project: merge only the \"rxusage\" key into the existing rules.",
   "rules": {
     "rxusage": {
       "$uid": {

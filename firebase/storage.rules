@@ -1,9 +1,8 @@
 rules_version = '2';
 
-// ⚠️ This Firebase project is shared with other apps.
-// Do NOT replace the existing rules with this file. In Firebase console → Storage → Rules,
-// copy only the "rxusage" match block below into the existing
-// `match /b/{bucket}/o { ... }` section, then Publish.
+// Optional — rxusage doesn't store files today.
+// New project: paste this whole file into Firebase console → Storage → Rules.
+// Shared project: copy only the "rxusage" match block into the existing `match /b/{bucket}/o { ... }`.
 service firebase.storage {
   match /b/{bucket}/o {
 

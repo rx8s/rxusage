@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { Activity, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { Activity, LayoutDashboard, LogOut, Menu, ShieldAlert, X } from "lucide-react";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { fetchApi, UsageApiError } from "@/lib/usageApi";
 import { useI18n } from "@/i18n/I18nProvider";
 import { LanguageSwitch, ThemeToggle } from "@/components/Controls";
 
@@ -16,16 +17,57 @@ export default function DashboardLayout({ children }: LayoutProps<"/dashboard">)
   const router = useRouter();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
+  // Which uid the server said is allowed / denied; anything else means "still checking".
+  const [access, setAccess] = useState<{ uid: string; allowed: boolean } | null>(null);
 
   // Client-side guard: pages are static, so protect data with Firebase Security Rules too.
   useEffect(() => {
     if (!loading && !user) router.replace("/login/");
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  // Ask the server whether this Google account is in ALLOWED_EMAIL. Data is protected server-side
+  // and by Firebase rules either way; this only shows a clear "not allowed" screen.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetchApi<{ allowed: boolean }>(user, "/api/me")
+      .then((r) => r.allowed)
+      // `next dev` has no Pages Functions, and a network error shouldn't lock you out.
+      .catch((e) => !(e instanceof UsageApiError && e.kind === "unauthorized"))
+      .then((allowed) => {
+        if (!cancelled) setAccess({ uid: user.uid, allowed });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  if (loading || !user || access?.uid !== user.uid) {
     return (
       <main className="flex min-h-screen items-center justify-center text-muted-foreground" aria-busy="true">
         {t.loading}
+      </main>
+    );
+  }
+
+  if (!access.allowed) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <ShieldAlert aria-hidden className="mx-auto size-10 text-warning" />
+          <h1 className="mt-4 text-xl font-semibold">{t.denied.title}</h1>
+          <p className="mt-2 text-muted-foreground">
+            {t.denied.body} <span className="font-mono text-foreground">{user.email}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => signOut(firebaseAuth())}
+            className="mt-6 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 font-semibold text-on-accent hover:opacity-90"
+          >
+            <LogOut aria-hidden className="size-4" />
+            {t.denied.switch}
+          </button>
+        </div>
       </main>
     );
   }

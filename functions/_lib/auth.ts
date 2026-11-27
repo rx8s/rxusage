@@ -3,8 +3,15 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export interface AuthEnv {
   FIREBASE_PROJECT_ID?: string;
+  /** One email, or several separated by commas. */
   ALLOWED_EMAIL?: string;
 }
+
+const allowedEmails = (env: AuthEnv) =>
+  (env.ALLOWED_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 
 const FIREBASE_JWKS = createRemoteJWKSet(
   new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"),
@@ -18,10 +25,11 @@ export const json = (body: unknown, status = 200) =>
 
 export const bearer = (request: Request) => request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || null;
 
-/** True when the request carries a valid Firebase ID token for the verified ALLOWED_EMAIL. */
+/** True when the request carries a valid Firebase ID token for a verified email in ALLOWED_EMAIL. */
 export async function verifyUser(request: Request, env: AuthEnv): Promise<boolean> {
   const token = bearer(request);
-  if (!token || !env.FIREBASE_PROJECT_ID || !env.ALLOWED_EMAIL) return false;
+  const allowed = allowedEmails(env);
+  if (!token || !env.FIREBASE_PROJECT_ID || !allowed.length) return false;
   try {
     const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
       issuer: `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`,
@@ -30,7 +38,7 @@ export async function verifyUser(request: Request, env: AuthEnv): Promise<boolea
     return (
       payload.email_verified === true &&
       typeof payload.email === "string" &&
-      payload.email.toLowerCase() === env.ALLOWED_EMAIL.toLowerCase()
+      allowed.includes(payload.email.toLowerCase())
     );
   } catch {
     return false;

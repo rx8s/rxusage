@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs the rxusage collector as a macOS LaunchAgent that runs every 5 minutes.
 #
-#   collector/install.sh [https://your-site.pages.dev]   install or update
+#   collector/install.sh https://your-site.pages.dev     install (URL required the first time) or update
 #   collector/install.sh --uninstall                     remove the LaunchAgent (keeps the config)
 #
 # The script is copied to ~/Library/Application Support/rxusage because launchd jobs
@@ -30,7 +30,8 @@ mkdir -p "$APP_DIR" "$CONFIG_DIR" "$(dirname "$PLIST")" "$(dirname "$LOG")"
 cp "$SRC" "$APP_DIR/collector.mjs"
 
 if [[ ! -f "$CONFIG" ]]; then
-  URL="${1:-https://rxusage.pages.dev}"
+  URL="${1:-}"
+  [[ -n "$URL" ]] || { echo "Usage: $0 https://your-site.pages.dev" >&2; exit 1; }
   TOKEN="$(openssl rand -hex 32)"
   (umask 077 && printf '{\n  "url": "%s",\n  "token": "%s"\n}\n' "$URL" "$TOKEN" > "$CONFIG")
   echo "Created $CONFIG (url: $URL)"
