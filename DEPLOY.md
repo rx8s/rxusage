@@ -21,16 +21,40 @@ Mac ของคุณ ──(ทุก 5 นาที)──▶ Cloudflare Page
 
 ## 1. Fork และ clone
 
-1. กด **Fork** repo นี้บน GitHub (repo ของคุณจะเป็น public หรือ private ก็ได้)
-2. Clone ลงเครื่อง:
+เลือกทางใดทางหนึ่ง:
+
+**ก. Fork (repo ของคุณจะเป็น public)**
+
+1. เปิด https://github.com/rx8s/rxusage → กด **Fork** → Create fork
+   - GitHub ไม่ให้ fork ของ repo public เป็น private ถ้าต้องการ private ให้ใช้ทาง ข.
+2. Clone fork ลงเครื่อง (แทน `<your-user>` ด้วยชื่อผู้ใช้ GitHub ของคุณ):
 
 ```bash
 git clone https://github.com/<your-user>/rxusage.git
 ```
 
+**ข. Repo private ของคุณเอง**
+
+1. สร้าง repo ใหม่ที่ https://github.com/new ชื่อ `rxusage` เลือก **Private** และไม่ต้องติ๊กสร้าง README, .gitignore หรือ license
+2. Clone ต้นฉบับแล้ว push ขึ้น repo ใหม่:
+
 ```bash
-cd rxusage && npm install
+git clone https://github.com/rx8s/rxusage.git
 ```
+
+```bash
+cd rxusage && git remote rename origin upstream && git remote add origin https://github.com/<your-user>/rxusage.git && git push -u origin master
+```
+
+**ติดตั้ง dependencies:** รันในโฟลเดอร์ `rxusage` (ทาง ก. ต้อง `cd rxusage` ก่อน ทาง ข. อยู่ในโฟลเดอร์นั้นแล้ว)
+
+```bash
+npm install
+```
+
+**รับอัปเดตจากต้นฉบับภายหลัง**
+- ทาง ก.: กด **Sync fork** ในหน้า repo ของคุณบน GitHub
+- ทาง ข.: รัน `git pull upstream master` แล้ว `git push`
 
 ## 2. Firebase
 
